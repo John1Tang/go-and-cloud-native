@@ -1,51 +1,63 @@
 package main
 
 import (
-	"flag"
-	
-	"fmt"
-	"os"
+	_ "flag"
 	"io"
+
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
-	
-	"log"
+	"os"
+	_ "time"
+
+	_ "log"
 )
 
 func main() {
-	
-	
-	http.HandleFunc("/example", func (w http.ResponseWriter, r *httpRequest){
+
+	http.HandleFunc("/example", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("VERSION", os.Getenv("VERSION"))
-	
+
 	})
-	
-	
-	http.HandleFunc("/healthz", func (w httpResponseWriter, r *http.Request){
+
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 	})
-	
-	result := http.ListenAndServe(":8080", nil)
-	
-	// client call
-	resp1, er1 := http.Get("http://localhost:8080" + "/example")
+
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
+		return
+	}
+
+	// client call
+	resp1, err1 := http.Get("http://localhost:8080" + "/example")
+	if err1 != nil {
 		fmt.Println("query cluster failed", err1.Error())
 		return
 	}
-	defer resp1.Body.Close()
-	
-	body1, err1 := ioutil.readAll(resp1.Body)
-	fmt.Println(resp1.statusCode, string(body1))
-	
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp1.Body)
+
+	body1, err1 := ioutil.ReadAll(resp1.Body)
+	fmt.Println(resp1.StatusCode, string(body1))
+
 	resp2, err2 := http.Get("http://localhost:8080" + "/healthz")
-	if err != nil {
+	if err2 != nil {
 		fmt.Println("query cluster failed", err2.Error())
 		return
 	}
-	defer resp2.Body.Close()
-	body2, err2 := ioutil.readAll(resp2.Body)
-	fmt.Println(resp2.statusCode, string(body2))
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp2.Body)
+
+	body2, err2 := ioutil.ReadAll(resp2.Body)
+	fmt.Println(resp2.StatusCode, string(body2))
 
 }
